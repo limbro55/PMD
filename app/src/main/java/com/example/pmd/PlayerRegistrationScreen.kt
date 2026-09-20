@@ -1,32 +1,16 @@
 package com.example.pmd
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
-import androidx.compose.material3.DatePicker
-import androidx.compose.material3.Divider
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Slider
-import androidx.compose.material3.Text
-import androidx.compose.material3.rememberDatePickerState
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import java.util.Calendar
-import kotlin.text.ifEmpty
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -41,7 +25,6 @@ fun PlayerRegistrationScreen() {
     var sliderPosition by remember { mutableFloatStateOf(1f) }
     val datePickerState = rememberDatePickerState()
 
-    // Состояние сохранённых данных игрока
     var registeredPlayer by remember { mutableStateOf<PlayerData?>(null) }
 
     Column(
@@ -51,6 +34,61 @@ fun PlayerRegistrationScreen() {
             .verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
+        // ФИО
+        OutlinedTextField(
+            value = fullName,
+            onValueChange = { fullName = it },
+            label = { Text("ФИО") },
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        // Пол
+        Text("Пол:", style = MaterialTheme.typography.titleMedium)
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            RadioButton(
+                selected = selectedGender == "Мужской",
+                onClick = { selectedGender = "Мужской" }
+            )
+            Text("Мужской", modifier = Modifier.padding(end = 16.dp))
+            RadioButton(
+                selected = selectedGender == "Женский",
+                onClick = { selectedGender = "Женский" }
+            )
+            Text("Женский")
+        }
+
+        // Курс
+        ExposedDropdownMenuBox(
+            expanded = expandedCourse,
+            onExpandedChange = { expandedCourse = !expandedCourse }
+        ) {
+            OutlinedTextField(
+                value = selectedCourseText,
+                onValueChange = {},
+                readOnly = true,
+                label = { Text("Курс") },
+                trailingIcon = {
+                    ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedCourse)
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .menuAnchor()
+            )
+            ExposedDropdownMenu(
+                expanded = expandedCourse,
+                onDismissRequest = { expandedCourse = false }
+            ) {
+                courses.forEach { course ->
+                    DropdownMenuItem(
+                        text = { Text(course) },
+                        onClick = {
+                            selectedCourseText = course
+                            expandedCourse = false
+                        }
+                    )
+                }
+            }
+        }
 
         // Уровень сложности
         Text(
@@ -105,14 +143,14 @@ fun PlayerRegistrationScreen() {
 
         Divider(modifier = Modifier.padding(vertical = 8.dp))
 
-        // Вывод сохранённых данных (TextView) и картинки (ImageBox)
+        // Вывод сохранённых данных
         registeredPlayer?.let { player ->
             Text(
                 text = """
                     Информация об игроке:
-//                    • ФИО: ${player.fullName}
-//                    • Пол: ${player.gender}
-//                    • Курс: ${player.course}
+                    • ФИО: ${player.fullName}
+                    • Пол: ${player.gender}
+                    • Курс: ${player.course}
                     • Сложность: ${player.difficulty}
                     • Дата рождения: ${player.birthDay}.${player.birthMonth}.${player.birthYear}
                     • Знак зодиака: ${player.zodiacSign}
@@ -124,6 +162,11 @@ fun PlayerRegistrationScreen() {
                 modifier = Modifier.fillMaxWidth(),
                 contentAlignment = Alignment.Center
             ) {
+                Image(
+                    painter = painterResource(id = getZodiacImageResource(player.zodiacSign)),
+                    contentDescription = "Знак зодиака",
+                    modifier = Modifier.size(100.dp)
+                )
             }
         }
     }
@@ -146,3 +189,21 @@ fun getZodiacSign(day: Int, month: Int): String {
         else -> "Неизвестно"
     }
 }
+//
+//fun getZodiacImageResource(zodiac: String): Int {
+//    return when (zodiac) {
+//        "Овен" -> R.drawable.ic_aries
+//        "Телец" -> R.drawable.ic_taurus
+//        "Близнецы" -> R.drawable.ic_gemini
+//        "Рак" -> R.drawable.ic_cancer
+//        "Лев" -> R.drawable.ic_leo
+//        "Дева" -> R.drawable.ic_virgo
+//        "Весы" -> R.drawable.ic_libra
+//        "Скорпион" -> R.drawable.ic_scorpio
+//        "Стрелец" -> R.drawable.ic_sagittarius
+//        "Козерог" -> R.drawable.ic_capricorn
+//        "Водолей" -> R.drawable.ic_aquarius
+//        "Рыбы" -> R.drawable.ic_pisces
+//        else -> android.R.drawable.ic_menu_help
+//    }
+//}
