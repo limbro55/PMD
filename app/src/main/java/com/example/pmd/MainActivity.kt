@@ -24,128 +24,34 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    PlayerRegistrationScreen()
+                    MainTabScreen()
                 }
             }
         }
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun PlayerRegistrationScreen() {
-    var fullName by remember { mutableStateOf("") }
-    var selectedGender by remember { mutableStateOf("Мужской") }
+fun MainTabScreen(){
+    var selectTabInd by remember { mutableIntStateOf(0)}
+    var tabTitles = listOf("Игрок", "Настройки", "Правила", "Авторы")
 
-    var expandedCourse by remember { mutableStateOf(false) }
-    val courses = listOf("1 курс", "2 курс", "3 курс", "4 курс", "5 курс")
-    var selectedCourseText by remember { mutableStateOf(courses[0]) }
-
-    var sliderPosition by remember { mutableFloatStateOf(1f) }
-    val datePickerState = rememberDatePickerState()
-
-    // Состояние сохранённых данных игрока
-    var registeredPlayer by remember { mutableStateOf<PlayerData?>(null) }
-
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp)
-            .verticalScroll(rememberScrollState()),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
-
-        // Уровень сложности
-        Text(
-            text = "Уровень сложности: ${sliderPosition.toInt()}",
-            style = MaterialTheme.typography.titleMedium
-        )
-        Slider(
-            value = sliderPosition,
-            onValueChange = { sliderPosition = it },
-            valueRange = 1f..10f,
-            steps = 8
-        )
-
-        // Дата рождения
-        Text(
-            text = "Дата рождения:",
-            style = MaterialTheme.typography.titleMedium
-        )
-        DatePicker(
-            state = datePickerState,
-            modifier = Modifier.fillMaxWidth()
-        )
-
-        // Кнопка регистрации
-        Button(
-            onClick = {
-                val selectedDateMillis = datePickerState.selectedDateMillis ?: System.currentTimeMillis()
-                val cal = Calendar.getInstance().apply { timeInMillis = selectedDateMillis }
-
-                val day = cal.get(Calendar.DAY_OF_MONTH)
-                val month = cal.get(Calendar.MONTH) + 1
-                val year = cal.get(Calendar.YEAR)
-
-                val zodiac = getZodiacSign(day, month)
-                val courseNum = courses.indexOf(selectedCourseText) + 1
-
-                registeredPlayer = PlayerData(
-                    fullName = fullName.ifEmpty { "Не указано" },
-                    gender = selectedGender,
-                    course = courseNum,
-                    difficulty = sliderPosition.toInt(),
-                    birthDay = day,
-                    birthMonth = month,
-                    birthYear = year,
-                    zodiacSign = zodiac
+    Column(modifier = Modifier.fillMaxSize()){
+        ScrollableTabRow(selectedTabIndex = selectTabInd) {
+            tabTitles.forEachIndexed { index, title ->
+                Tab(
+                    selected = selectTabInd == index,
+                    onClick = {selectTabInd = index},
+                    text = { Text(title)}
                 )
-            },
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text("Зарегистрироваться")
-        }
-
-        Divider(modifier = Modifier.padding(vertical = 8.dp))
-
-        // Вывод сохранённых данных (TextView) и картинки (ImageBox)
-        registeredPlayer?.let { player ->
-            Text(
-                text = """
-                    Информация об игроке:
-//                    • ФИО: ${player.fullName}
-//                    • Пол: ${player.gender}
-//                    • Курс: ${player.course}
-                    • Сложность: ${player.difficulty}
-                    • Дата рождения: ${player.birthDay}.${player.birthMonth}.${player.birthYear}
-                    • Знак зодиака: ${player.zodiacSign}
-                """.trimIndent(),
-                style = MaterialTheme.typography.bodyLarge
-            )
-
-            Box(
-                modifier = Modifier.fillMaxWidth(),
-                contentAlignment = Alignment.Center
-            ) {
             }
         }
     }
-}
 
-fun getZodiacSign(day: Int, month: Int): String {
-    return when (month) {
-        1 -> if (day < 20) "Козерог" else "Водолей"
-        2 -> if (day < 19) "Водолей" else "Рыбы"
-        3 -> if (day < 21) "Рыбы" else "Овен"
-        4 -> if (day < 20) "Овен" else "Телец"
-        5 -> if (day < 21) "Телец" else "Близнецы"
-        6 -> if (day < 21) "Близнецы" else "Рак"
-        7 -> if (day < 23) "Рак" else "Лев"
-        8 -> if (day < 23) "Лев" else "Дева"
-        9 -> if (day < 23) "Дева" else "Весы"
-        10 -> if (day < 23) "Весы" else "Скорпион"
-        11 -> if (day < 22) "Скорпион" else "Стрелец"
-        12 -> if (day < 22) "Стрелец" else "Козерог"
-        else -> "Неизвестно"
+    when(selectTabInd){
+        0->PlayerRegistrationScreen()
+        1->GameSettingsScreen()
+        2->Text("Текст правил", modifier = Modifier.padding(16.dp))
+        3->Text("Список Авторов", modifier = Modifier.padding(16.dp))
     }
 }
