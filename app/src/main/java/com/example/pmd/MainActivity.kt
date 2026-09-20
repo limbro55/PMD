@@ -12,6 +12,12 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
+import android.webkit.WebView
+import androidx.compose.ui.viewinterop.AndroidView
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import java.util.Calendar
 
@@ -54,6 +60,63 @@ fun PlayerRegistrationScreen() {
             .verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
+
+        // ФИО
+        OutlinedTextField(
+            value = fullName,
+            onValueChange = { fullName = it },
+            label = { Text("ФИО") },
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        // Пол
+        Text("Пол:", style = MaterialTheme.typography.titleMedium)
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            RadioButton(
+                selected = selectedGender == "Мужской",
+                onClick = { selectedGender = "Мужской" }
+            )
+            Text("Мужской", modifier = Modifier.padding(end = 16.dp))
+            RadioButton(
+                selected = selectedGender == "Женский",
+                onClick = { selectedGender = "Женский" }
+            )
+            Text("Женский")
+        }
+
+        // Курс
+        ExposedDropdownMenuBox(
+            expanded = expandedCourse,
+            onExpandedChange = { expandedCourse = !expandedCourse }
+        ) {
+            OutlinedTextField(
+                value = selectedCourseText,
+                onValueChange = {},
+                readOnly = true,
+                label = { Text("Курс") },
+                trailingIcon = {
+                    ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedCourse)
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .menuAnchor()
+            )
+            ExposedDropdownMenu(
+                expanded = expandedCourse,
+                onDismissRequest = { expandedCourse = false }
+            ) {
+                courses.forEach { course ->
+                    DropdownMenuItem(
+                        text = { Text(course) },
+                        onClick = {
+                            selectedCourseText = course
+                            expandedCourse = false
+                        }
+                    )
+                }
+            }
+        }
+
 
         // Уровень сложности
         Text(
@@ -113,9 +176,9 @@ fun PlayerRegistrationScreen() {
             Text(
                 text = """
                     Информация об игроке:
-//                    • ФИО: ${player.fullName}
-//                    • Пол: ${player.gender}
-//                    • Курс: ${player.course}
+                    • ФИО: ${player.fullName}
+                    • Пол: ${player.gender}
+                    • Курс: ${player.course}
                     • Сложность: ${player.difficulty}
                     • Дата рождения: ${player.birthDay}.${player.birthMonth}.${player.birthYear}
                     • Знак зодиака: ${player.zodiacSign}
@@ -147,5 +210,57 @@ fun getZodiacSign(day: Int, month: Int): String {
         11 -> if (day < 22) "Скорпион" else "Стрелец"
         12 -> if (day < 22) "Стрелец" else "Козерог"
         else -> "Неизвестно"
+    }
+}
+
+@Composable
+fun RulesScreen() {
+    AndroidView(
+        factory = { context ->
+            WebView(context).apply {
+                settings.javaScriptEnabled = false
+                loadUrl("file:///android_asset/rules.html")
+            }
+        },
+        modifier = Modifier.fillMaxSize()
+    )
+}
+
+data class Author(val name: String, val photoRes: Int)
+
+@Composable
+fun AuthorsScreen() {
+    val authors = listOf(
+        Author("Сафонов Данил", R.drawable.avatar1),
+        Author("Чепурняк Александр", R.drawable.avatar2)
+    )
+
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(16.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        items(authors) { author ->
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Image(
+                    painter = painterResource(id = author.photoRes),
+                    contentDescription = author.name,
+                    modifier = Modifier
+                        .size(64.dp)
+                        .clip(CircleShape)
+                )
+                Spacer(modifier = Modifier.width(16.dp))
+                Text(
+                    text = author.name,
+                    style = MaterialTheme.typography.bodyLarge
+                )
+            }
+            Divider()
+        }
     }
 }
