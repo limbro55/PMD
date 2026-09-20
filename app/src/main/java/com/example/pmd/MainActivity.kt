@@ -33,25 +33,31 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun MainTabScreen(){
-    var selectTabInd by remember { mutableIntStateOf(0)}
-    var tabTitles = listOf("Игрок", "Настройки", "Правила", "Авторы")
+    var selectedTabIndex by remember { mutableIntStateOf(0) }
+    val tabTitles = listOf("Игрок", "Настройки", "Правила", "Авторы")
 
-    Column(modifier = Modifier.fillMaxSize()){
-        ScrollableTabRow(selectedTabIndex = selectTabInd) {
-            tabTitles.forEachIndexed { index, title ->
-                Tab(
-                    selected = selectTabInd == index,
-                    onClick = {selectTabInd = index},
-                    text = { Text(title)}
-                )
+    Scaffold(
+        topBar = {
+            ScrollableTabRow(selectedTabIndex = selectedTabIndex) {
+                tabTitles.forEachIndexed { index, title ->
+                    Tab(
+                        selected = selectedTabIndex == index,
+                        onClick = { selectedTabIndex = index },
+                        text = { Text(title) }
+                    )
+                }
             }
         }
+    ) { innerPadding ->
+        Box(
+            modifier = Modifier.fillMaxSize().padding(innerPadding)
+        ){
+            when (selectedTabIndex) {
+                0 -> PlayerRegistrationScreen()
+                1 -> GameSettingsScreen()
+                2 -> Text("Текст правил", modifier = Modifier.padding(16.dp))
+                3 -> Text("Сафонов, Чепурняк", modifier = Modifier.padding(16.dp))
+        }
     }
-
-    when(selectTabInd){
-        0->PlayerRegistrationScreen()
-        1->GameSettingsScreen()
-        2->Text("Текст правил", modifier = Modifier.padding(16.dp))
-        3->Text("Список Авторов", modifier = Modifier.padding(16.dp))
-    }
+}
 }
