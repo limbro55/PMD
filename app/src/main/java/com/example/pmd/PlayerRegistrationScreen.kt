@@ -19,7 +19,7 @@ fun PlayerRegistrationScreen() {
     var selectedGender by remember { mutableStateOf("Мужской") }
 
     var expandedCourse by remember { mutableStateOf(false) }
-    val courses = listOf("1 курс", "2 курс", "3 курс", "4 курс", "5 курс")
+    val courses = listOf("1 курс", "2 курс", "3 курс", "4 курс")
     var selectedCourseText by remember { mutableStateOf(courses[0]) }
 
     var sliderPosition by remember { mutableFloatStateOf(1f) }
@@ -90,7 +90,6 @@ fun PlayerRegistrationScreen() {
             }
         }
 
-        // Уровень сложности
         Text(
             text = "Уровень сложности: ${sliderPosition.toInt()}",
             style = MaterialTheme.typography.titleMedium
@@ -102,7 +101,6 @@ fun PlayerRegistrationScreen() {
             steps = 8
         )
 
-        // Дата рождения
         Text(
             text = "Дата рождения:",
             style = MaterialTheme.typography.titleMedium
@@ -112,7 +110,6 @@ fun PlayerRegistrationScreen() {
             modifier = Modifier.fillMaxWidth()
         )
 
-        // Кнопка регистрации
         Button(
             onClick = {
                 val selectedDateMillis = datePickerState.selectedDateMillis ?: System.currentTimeMillis()
@@ -143,7 +140,6 @@ fun PlayerRegistrationScreen() {
 
         Divider(modifier = Modifier.padding(vertical = 8.dp))
 
-        // Вывод сохранённых данных
         registeredPlayer?.let { player ->
             Text(
                 text = """
@@ -189,21 +185,21 @@ fun getZodiacSign(day: Int, month: Int): String {
         else -> "Неизвестно"
     }
 }
-//
-//fun getZodiacImageResource(zodiac: String): Int {
-//    return when (zodiac) {
-//        "Овен" -> R.drawable.ic_aries
-//        "Телец" -> R.drawable.ic_taurus
-//        "Близнецы" -> R.drawable.ic_gemini
-//        "Рак" -> R.drawable.ic_cancer
-//        "Лев" -> R.drawable.ic_leo
-//        "Дева" -> R.drawable.ic_virgo
-//        "Весы" -> R.drawable.ic_libra
-//        "Скорпион" -> R.drawable.ic_scorpio
-//        "Стрелец" -> R.drawable.ic_sagittarius
-//        "Козерог" -> R.drawable.ic_capricorn
-//        "Водолей" -> R.drawable.ic_aquarius
-//        "Рыбы" -> R.drawable.ic_pisces
-//        else -> android.R.drawable.ic_menu_help
-//    }
-//}
+
+fun getZodiacImageResource(zodiac: String): Int {
+    return when (zodiac) {
+        "Овен" -> R.drawable.ic_aries
+        "Телец" -> R.drawable.ic_taurus
+        "Близнецы" -> R.drawable.ic_gemini
+        "Рак" -> R.drawable.ic_cancer
+        "Лев" -> R.drawable.ic_leo
+        "Дева" -> R.drawable.ic_virgo
+        "Весы" -> R.drawable.ic_libra
+        "Скорпион" -> R.drawable.ic_scorpio
+        "Стрелец" -> R.drawable.ic_sagittarius
+        "Козерог" -> R.drawable.ic_capricorn
+        "Водолей" -> R.drawable.ic_aquarius
+        "Рыбы" -> R.drawable.ic_pisces
+        else -> android.R.drawable.ic_menu_help
+    }
+}
