@@ -22,12 +22,13 @@ data class GameSettings(
 
 @Composable
 fun GameSettingsScreen (
+    settings: GameSettings = GameSettings(),
     onSaveSettings: (GameSettings) -> Unit = {}
 ){
-    var gameSpeed by remember { mutableFloatStateOf(1.0f)}
-    var maxCockroaches by remember {mutableFloatStateOf(1.0f)}
-    var bonusInterval by remember {mutableStateOf("5")}
-    var roundDuration by remember {mutableStateOf("60")}
+    var gameSpeed by remember { mutableFloatStateOf(settings.gameSpeed)}
+    var maxCockroaches by remember {mutableFloatStateOf(settings.maxCockroaches.toFloat())}
+    var bonusInterval by remember {mutableStateOf(settings.bonusIntervalSec.toString())}
+    var roundDuration by remember {mutableStateOf(settings.roundDurationSec.toString())}
 
     Column(
         modifier = Modifier.fillMaxSize().padding(16.dp).verticalScroll(rememberScrollState()),
@@ -73,7 +74,7 @@ fun GameSettingsScreen (
         )
 
         Button(
-            onClick = {},
+            onClick = { onSaveSettings(GameSettings(gameSpeed, maxCockroaches.toInt(), (bonusInterval.toIntOrNull() ?: 5).coerceAtLeast(1), (roundDuration.toIntOrNull() ?: 60).coerceAtLeast(1))) },
             modifier = Modifier.fillMaxWidth()
         ){
             Text("Сохранить настройки")

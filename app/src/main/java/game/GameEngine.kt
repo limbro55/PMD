@@ -8,15 +8,15 @@ class GameEngine(private val config: GameConfig) {
 
     fun tick(state: GameState, dtSec: Float): GameState {
         val updated = state.bugs.map { bug ->
-            var nx = bug.x + bug.vx * dtSec
-            var ny = bug.y + bug.vy * dtSec
+            var nx = bug.x + bug.vx * dtSec * config.speedMultiplier
+            var ny = bug.y + bug.vy * dtSec * config.speedMultiplier
             var nvx = bug.vx
             var nvy = bug.vy
 
-            if (nx < 0f) { nx = 0f; nvx = -nvx }
-            if (nx > 1f) { nx = 1f; nvx = -nvx }
-            if (ny < 0f) { ny = 0f; nvy = -nvy }
-            if (ny > 1f) { ny = 1f; nvy = -nvy }
+            if (nx < bug.size / 2f) { nx = bug.size / 2f; nvx = -nvx }
+            if (nx > 1f - bug.size / 2f) { nx = 1f - bug.size / 2f; nvx = -nvx }
+            if (ny < bug.size / 2f) { ny = bug.size / 2f; nvy = -nvy }
+            if (ny > 1f - bug.size / 2f) { ny = 1f - bug.size / 2f; nvy = -nvy }
 
             bug.copy(x = nx, y = ny, vx = nvx, vy = nvy)
         }
@@ -25,7 +25,8 @@ class GameEngine(private val config: GameConfig) {
     }
 
     fun handleTap(state: GameState, lx: Float, ly: Float): GameState {
-        val hit = state.bugs.firstOrNull { bug ->
+        if (!state.isRunning) return state
+        val hit = state.bugs.asReversed().firstOrNull { bug ->
             val half = bug.size / 2f
             lx in (bug.x - half)..(bug.x + half) &&
                     ly in (bug.y - half)..(bug.y + half)
@@ -42,7 +43,7 @@ class GameEngine(private val config: GameConfig) {
     }
 
     fun spawnIfPossible(state: GameState): GameState {
-        if (state.bugs.size >= config.maxBugsOnScreen) return state
+        if (!state.isRunning || state.bugs.size >= config.maxBugsOnScreen) return state
         val r = (0..100).random()
         val type = when {
             r < 60 -> BugType.NORMAL
