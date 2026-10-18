@@ -25,13 +25,13 @@ import kotlinx.coroutines.delay
 import kotlin.math.roundToInt
 
 @Composable
-fun GameScreen(settings: GameSettings, onExit: () -> Unit) {
-    val config = remember(settings) {
+fun GameScreen(settings: GameSettings, difficulty: Int = 1, onFinished: (GameState) -> Unit = {}, onExit: () -> Unit) {
+    val config = remember(settings, difficulty) {
         GameConfig(
             roundDurationSec = settings.roundDurationSec.coerceAtLeast(1),
-            maxBugsOnScreen = settings.maxCockroaches.coerceIn(1, 30),
+            maxBugsOnScreen = (settings.maxCockroaches + (difficulty - 1) / 2).coerceIn(1, 30),
             bonusIntervalSec = settings.bonusIntervalSec.coerceAtLeast(1),
-            speedMultiplier = settings.gameSpeed
+            speedMultiplier = settings.gameSpeed * (1f + (difficulty.coerceIn(1,10) - 1) * 0.12f)
         )
     }
     val engine = remember(config) { GameEngine(config) }
@@ -56,6 +56,7 @@ fun GameScreen(settings: GameSettings, onExit: () -> Unit) {
                 state = engine.spawnIfPossible(state)
             }
         }
+        if (!state.isRunning) onFinished(state)
     }
 
     Column(Modifier.fillMaxSize().padding(12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {

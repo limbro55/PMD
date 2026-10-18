@@ -14,7 +14,7 @@ import java.util.Calendar
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun PlayerRegistrationScreen() {
+fun PlayerRegistrationScreen(onRegister: (PlayerData) -> Unit = {}) {
     var fullName by remember { mutableStateOf("") }
     var selectedGender by remember { mutableStateOf("Мужской") }
 
@@ -132,6 +132,7 @@ fun PlayerRegistrationScreen() {
                     birthYear = year,
                     zodiacSign = zodiac
                 )
+                registeredPlayer?.let(onRegister)
             },
             modifier = Modifier.fillMaxWidth()
         ) {
