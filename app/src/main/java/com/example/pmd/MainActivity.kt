@@ -58,15 +58,21 @@ fun MainTabScreen(db: GameDatabase) {
                     scope.launch {
                         try {
                             withContext(Dispatchers.IO) {
-                                dao.insertRecord(RecordEntity().apply {
-                                    this.playerId = playerId
-                                    score = result.score
-                                    hits = result.hits
-                                    misses = result.misses
-                                    difficulty = active.difficulty
-                                    durationSeconds = settings.roundDurationSec
-                                    playedAt = System.currentTimeMillis()
-                                })
+                                db.runInTransaction {
+                                    val best = dao.getBestScore(playerId)
+                                    if (best == null || result.score > best) {
+                                        dao.deleteRecordsForPlayer(playerId)
+                                        dao.insertRecord(RecordEntity().apply {
+                                            this.playerId = playerId
+                                            score = result.score
+                                            hits = result.hits
+                                            misses = result.misses
+                                            difficulty = active.difficulty
+                                            durationSeconds = settings.roundDurationSec
+                                            playedAt = System.currentTimeMillis()
+                                        })
+                                    }
+                                }
                             }
                             refresh()
                         } catch (e: Exception) { error = e.message }
@@ -122,9 +128,9 @@ fun MainTabScreen(db: GameDatabase) {
                         Button(onClick = { playing = true }, enabled = players.any { it.id == selectedPlayerId }) { Text("Начать игру") }
                     }
                     2 -> GameSettingsScreen(settings = settings, onSaveSettings = { settings = it })
-                    3 -> RecordsScreen(records)
-                    4 -> RulesScreen()
-                    5 -> AuthorsScreen()
+                    3 -> RulesScreen()
+                    4 -> AuthorsScreen()
+                    5 -> RecordsScreen(records)
                 }
             }
         }

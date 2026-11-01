@@ -1,5 +1,13 @@
 package com.example.pmd
 
+import androidx.activity.compose.BackHandler
+import android.content.Context
+import android.hardware.Sensor
+import android.hardware.SensorEvent
+import android.hardware.SensorEventListener
+import android.hardware.SensorManager
+import android.media.MediaPlayer
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -37,18 +45,61 @@ fun GameScreen(settings: GameSettings, difficulty: Int = 1, onFinished: (GameSta
     val engine = remember(config) { GameEngine(config) }
     var state by remember(config) { mutableStateOf(GameState(timeLeftSec = config.roundDurationSec.toFloat())) }
     var round by remember { mutableIntStateOf(0) }
+    var resultSubmitted by remember(round) { mutableStateOf(false) }
+    fun submitResultOnce() {
+        if (!resultSubmitted) {
+            resultSubmitted = true
+            onFinished(state)
+        }
+    }
+    fun exitGame() {
+        submitResultOnce()
+        onExit()
+    }
+    BackHandler { exitGame() }
+    var bonusAvailable by remember(round) { mutableStateOf(false) }
+    var bonusRemaining by remember(round) { mutableFloatStateOf(0f) }
+    var tiltX by remember { mutableFloatStateOf(0f) }
+    var tiltY by remember { mutableFloatStateOf(0f) }
+    val context = LocalContext.current
+    val sensorManager = remember(context) { context.getSystemService(Context.SENSOR_SERVICE) as SensorManager }
+    val accelerometer = remember(sensorManager) { sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER) }
+    DisposableEffect(sensorManager, accelerometer) {
+        val listener = object : SensorEventListener {
+            override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) = Unit
+            override fun onSensorChanged(event: SensorEvent) {
+                // Screen coordinates in portrait: positive X = right, positive Y = down.
+                tiltX = (-event.values[0]).coerceIn(-9.8f, 9.8f)
+                tiltY = (event.values[1]).coerceIn(-9.8f, 9.8f)
+            }
+        }
+        if (accelerometer != null) sensorManager.registerListener(listener, accelerometer, SensorManager.SENSOR_DELAY_GAME)
+        onDispose { sensorManager.unregisterListener(listener) }
+    }
+    val player = remember(context) { MediaPlayer.create(context, R.raw.bugs_scream) }
+    DisposableEffect(player) { onDispose { player?.release() } }
+
 
     LaunchedEffect(round, engine) {
         state = GameState(timeLeftSec = config.roundDurationSec.toFloat())
         state = engine.spawnIfPossible(state)
         var lastTime = android.os.SystemClock.elapsedRealtime()
         var spawnElapsed = 0f
+        var bonusElapsed = 0f
+        bonusAvailable = false
+        bonusRemaining = 0f
         while (state.isRunning) {
             delay(16L)
             val now = android.os.SystemClock.elapsedRealtime()
             val dt = ((now - lastTime) / 1000f).coerceIn(0f, 0.1f)
             lastTime = now
-            state = engine.tick(state, dt)
+            if (bonusRemaining > 0f) bonusRemaining = (bonusRemaining - dt).coerceAtLeast(0f)
+            bonusElapsed += dt
+            if (bonusElapsed >= config.bonusIntervalSec) {
+                bonusElapsed -= config.bonusIntervalSec
+                if (bonusRemaining <= 0f) bonusAvailable = true
+            }
+            state = engine.tick(state, dt, tiltX, tiltY, bonusRemaining > 0f)
             if (!state.isRunning) break
             spawnElapsed += dt
             if (spawnElapsed >= config.spawnIntervalMs / 1000f) {
@@ -56,7 +107,7 @@ fun GameScreen(settings: GameSettings, difficulty: Int = 1, onFinished: (GameSta
                 state = engine.spawnIfPossible(state)
             }
         }
-        if (!state.isRunning) onFinished(state)
+        if (!state.isRunning) submitResultOnce()
     }
 
     Column(Modifier.fillMaxSize().padding(12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -66,6 +117,16 @@ fun GameScreen(settings: GameSettings, difficulty: Int = 1, onFinished: (GameSta
         }
         if (state.isRunning) {
             Text("Попадания: ${state.hits}    Промахи: ${state.misses}")
+            if (bonusAvailable && bonusRemaining <= 0f) {
+                Button(onClick = {
+                    bonusAvailable = false
+                    bonusRemaining = 5f
+                    player?.seekTo(0)
+                    player?.start()
+                }, enabled = accelerometer != null) { Text("🎁 Бонус! Наклоняй телефон (5 с)") }
+            }
+            if (bonusRemaining > 0f) Text("Наклон активен: ${kotlin.math.ceil(bonusRemaining).toInt()} с")
+            if (accelerometer == null) Text("Акселерометр не обнаружен: бонус недоступен")
             BoxWithConstraints(
                 modifier = Modifier.fillMaxWidth().weight(1f)
                     .background(Color(0xFFE8F5E9), RoundedCornerShape(16.dp))
@@ -107,6 +168,6 @@ fun GameScreen(settings: GameSettings, difficulty: Int = 1, onFinished: (GameSta
                 Button(onClick = { round++ }) { Text("Играть снова") }
             }
         }
-        OutlinedButton(onClick = onExit, modifier = Modifier.fillMaxWidth()) { Text("В меню") }
+        OutlinedButton(onClick = { exitGame() }, modifier = Modifier.fillMaxWidth()) { Text("В меню") }
     }
 }

@@ -6,17 +6,17 @@ import com.example.pmd.model.GameState
 
 class GameEngine(private val config: GameConfig) {
 
-    fun tick(state: GameState, dtSec: Float): GameState {
+    fun tick(state: GameState, dtSec: Float, tiltX: Float = 0f, tiltY: Float = 0f, bonusActive: Boolean = false): GameState {
         val updated = state.bugs.map { bug ->
-            var nx = bug.x + bug.vx * dtSec * config.speedMultiplier
-            var ny = bug.y + bug.vy * dtSec * config.speedMultiplier
+            var nx = bug.x + (bug.vx * config.speedMultiplier + if (bonusActive) tiltX * 0.075f else 0f) * dtSec
+            var ny = bug.y + (bug.vy * config.speedMultiplier + if (bonusActive) tiltY * 0.075f else 0f) * dtSec
             var nvx = bug.vx
             var nvy = bug.vy
 
-            if (nx < bug.size / 2f) { nx = bug.size / 2f; nvx = -nvx }
-            if (nx > 1f - bug.size / 2f) { nx = 1f - bug.size / 2f; nvx = -nvx }
-            if (ny < bug.size / 2f) { ny = bug.size / 2f; nvy = -nvy }
-            if (ny > 1f - bug.size / 2f) { ny = 1f - bug.size / 2f; nvy = -nvy }
+            if (nx < bug.size / 2f) { nx = bug.size / 2f; if (!bonusActive) nvx = -nvx }
+            if (nx > 1f - bug.size / 2f) { nx = 1f - bug.size / 2f; if (!bonusActive) nvx = -nvx }
+            if (ny < bug.size / 2f) { ny = bug.size / 2f; if (!bonusActive) nvy = -nvy }
+            if (ny > 1f - bug.size / 2f) { ny = 1f - bug.size / 2f; if (!bonusActive) nvy = -nvy }
 
             bug.copy(x = nx, y = ny, vx = nvx, vy = nvy)
         }
