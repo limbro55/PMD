@@ -34,12 +34,26 @@ class GameEngine(private val config: GameConfig) {
         return if (hit != null) {
             state.copy(
                 bugs = state.bugs - hit,
-                score = state.score + hit.type.score,
+                score = state.score + if (hit.type == BugType.GOLD) hit.goldPoints else hit.type.score,
                 hits = state.hits + 1
             )
         } else {
             state.copy(misses = state.misses + 1, score = (state.score - 5).coerceAtLeast(0))
         }
+    }
+
+    /** Every 20 seconds replace any previous golden bug and reserve a slot for a new one. */
+    fun spawnGold(state: GameState, goldPoints: Int): GameState {
+        if (!state.isRunning || goldPoints <= 0) return state
+
+        // Never allow two golden bugs at the same time.
+        val withoutPreviousGold = state.bugs.filterNot { it.type == BugType.GOLD }
+        val withSpace = if (withoutPreviousGold.size >= config.maxBugsOnScreen) {
+            // Keep the maximum on-screen bug limit even when the field is full.
+            withoutPreviousGold.drop(1)
+        } else withoutPreviousGold
+        val goldenBug = Bug.spawn(BugType.GOLD).copy(goldPoints = goldPoints)
+        return state.copy(bugs = withSpace + goldenBug)
     }
 
     fun spawnIfPossible(state: GameState): GameState {

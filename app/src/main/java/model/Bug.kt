@@ -12,7 +12,8 @@ data class Bug(
     val y: Float,
     val vx: Float,
     val vy: Float,
-    val size: Float
+    val size: Float,
+    val goldPoints: Int = 0
 ) {
     companion object {
         fun spawn(type: BugType, baseSize: Float = 0.1f): Bug {

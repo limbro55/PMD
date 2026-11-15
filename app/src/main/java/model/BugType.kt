@@ -10,5 +10,6 @@ enum class BugType(
 ) {
     NORMAL(1.0f, 1.0f, 10, R.drawable.bug_normal),
     FAST  (2.0f, 0.7f, 20, R.drawable.bug_fast),
-    RARE  (1.5f, 1.3f, 50, R.drawable.bug_rare)
+    RARE  (1.5f, 1.3f, 50, R.drawable.bug_rare),
+    GOLD  (1.2f, 1.15f, 0, R.drawable.bug_gold)
 }
