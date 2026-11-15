@@ -36,6 +36,8 @@ android {
 }
 
 dependencies {
+    implementation("com.squareup.retrofit2:retrofit:3.0.0")
+    implementation("com.squareup.retrofit2:converter-scalars:3.0.0")
     implementation("androidx.room:room-runtime:2.8.4")
     implementation(libs.androidx.room.common)
     annotationProcessor("androidx.room:room-compiler:2.8.4")

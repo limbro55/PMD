@@ -1,0 +1,69 @@
+package com.example.pmd.game
+
+import com.example.pmd.model.Bug
+import com.example.pmd.model.BugType
+import com.example.pmd.model.GameState
+
+class GameEngine(private val config: GameConfig) {
+
+    fun tick(state: GameState, dtSec: Float, tiltX: Float = 0f, tiltY: Float = 0f, bonusActive: Boolean = false): GameState {
+        val updated = state.bugs.map { bug ->
+            var nx = bug.x + (bug.vx * config.speedMultiplier + if (bonusActive) tiltX * 0.075f else 0f) * dtSec
+            var ny = bug.y + (bug.vy * config.speedMultiplier + if (bonusActive) tiltY * 0.075f else 0f) * dtSec
+            var nvx = bug.vx
+            var nvy = bug.vy
+
+            if (nx < bug.size / 2f) { nx = bug.size / 2f; if (!bonusActive) nvx = -nvx }
+            if (nx > 1f - bug.size / 2f) { nx = 1f - bug.size / 2f; if (!bonusActive) nvx = -nvx }
+            if (ny < bug.size / 2f) { ny = bug.size / 2f; if (!bonusActive) nvy = -nvy }
+            if (ny > 1f - bug.size / 2f) { ny = 1f - bug.size / 2f; if (!bonusActive) nvy = -nvy }
+
+            bug.copy(x = nx, y = ny, vx = nvx, vy = nvy)
+        }
+        val newTime = (state.timeLeftSec - dtSec).coerceAtLeast(0f)
+        return state.copy(bugs = updated, timeLeftSec = newTime, isRunning = newTime > 0f)
+    }
+
+    fun handleTap(state: GameState, lx: Float, ly: Float): GameState {
+        if (!state.isRunning) return state
+        val hit = state.bugs.asReversed().firstOrNull { bug ->
+            val half = bug.size / 2f
+            lx in (bug.x - half)..(bug.x + half) &&
+                    ly in (bug.y - half)..(bug.y + half)
+        }
+        return if (hit != null) {
+            state.copy(
+                bugs = state.bugs - hit,
+                score = state.score + if (hit.type == BugType.GOLD) hit.goldPoints else hit.type.score,
+                hits = state.hits + 1
+            )
+        } else {
+            state.copy(misses = state.misses + 1, score = (state.score - 5).coerceAtLeast(0))
+        }
+    }
+
+    /** Every 20 seconds replace any previous golden bug and reserve a slot for a new one. */
+    fun spawnGold(state: GameState, goldPoints: Int): GameState {
+        if (!state.isRunning || goldPoints <= 0) return state
+
+        // Never allow two golden bugs at the same time.
+        val withoutPreviousGold = state.bugs.filterNot { it.type == BugType.GOLD }
+        val withSpace = if (withoutPreviousGold.size >= config.maxBugsOnScreen) {
+            // Keep the maximum on-screen bug limit even when the field is full.
+            withoutPreviousGold.drop(1)
+        } else withoutPreviousGold
+        val goldenBug = Bug.spawn(BugType.GOLD).copy(goldPoints = goldPoints)
+        return state.copy(bugs = withSpace + goldenBug)
+    }
+
+    fun spawnIfPossible(state: GameState): GameState {
+        if (!state.isRunning || state.bugs.size >= config.maxBugsOnScreen) return state
+        val r = (0..100).random()
+        val type = when {
+            r < 60 -> BugType.NORMAL
+            r < 90 -> BugType.FAST
+            else   -> BugType.RARE
+        }
+        return state.copy(bugs = state.bugs + Bug.spawn(type))
+    }
+}
