@@ -16,13 +16,10 @@ import java.util.Calendar
 import java.util.Locale
 import kotlin.math.roundToInt
 
-/** Bank of Russia's accounting price of gold (RUB per gram), not a retail quote. */
 data class GoldQuote(val rubPerGram: Double, val date: String) {
-    // Explicit game rule: 1 point for 100 RUB per gram, rounded to the nearest point.
     val points: Int get() = (rubPerGram / 100.0).roundToInt().coerceIn(1, 10_000)
 }
 
-/** CBR XML service: https://www.cbr.ru/scripts/xml_metall.asp */
 private interface CbrMetalsApi {
     @GET("scripts/xml_metall.asp")
     suspend fun history(
@@ -40,7 +37,6 @@ object GoldRepository {
             .create(CbrMetalsApi::class.java)
     }
 
-    /** Read last successfully downloaded quote. No invented default price. */
     fun cached(context: Context): GoldQuote? {
         val prefs = context.getSharedPreferences(CACHE, Context.MODE_PRIVATE)
         val price = prefs.getString("price", null)?.toDoubleOrNull() ?: return null
@@ -48,7 +44,6 @@ object GoldRepository {
         return if (price.isFinite() && price > 0 && date.isNotBlank()) GoldQuote(price, date) else null
     }
 
-    /** Downloads latest available rate from the last 14 days (includes weekends). */
     suspend fun load(context: Context): GoldQuote = withContext(Dispatchers.IO) {
         val cal = Calendar.getInstance()
         val format = SimpleDateFormat("dd/MM/yyyy", Locale.US)
@@ -56,7 +51,6 @@ object GoldRepository {
         cal.add(Calendar.DAY_OF_YEAR, -14)
         val startDate = format.format(cal.time)
 
-        // Closing ResponseBody and InputStream avoids leaking network connections.
         val quote = withTimeout(10_000L) {
             api.history(startDate, endDate).use { body ->
                 body.byteStream().use { stream ->
@@ -74,7 +68,6 @@ object GoldRepository {
         quote
     }
 
-    /** If offline, keep the actual last downloaded quotation (not a made-up rate). */
     suspend fun latestOrCached(context: Context): GoldQuote? {
         return try {
             load(context)
@@ -85,9 +78,6 @@ object GoldRepository {
         }
     }
 
-    /** XML: <Record Date="dd.MM.yyyy" Code="1"><Buy>...</Buy><Sell>...</Sell></Record>.
-     *  Code=1 means gold; Sell is the reported accounting price used for the game.
-     */
     private fun parseGold(parser: XmlPullParser): GoldQuote {
         var latest: GoldQuote? = null
         var latestDateKey = ""

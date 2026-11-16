@@ -72,7 +72,7 @@ fun GameScreen(settings: GameSettings, difficulty: Int = 1, onFinished: (GameSta
     var goldRetryAttempt by remember { mutableIntStateOf(0) }
     var goldCountdown by remember(round) { mutableIntStateOf(20) }
 
-    // The first request happens at screen opening. The key allows manual/automatic retries.
+
     LaunchedEffect(context, goldRetryAttempt) {
         goldLoading = true
         goldLoadError = null

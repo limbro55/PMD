@@ -16,18 +16,15 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
 import java.util.Locale
 
-/** Real Android home-screen widget. Android requests updates roughly every 30+ minutes. */
 class GoldWidgetProvider : AppWidgetProvider() {
     override fun onUpdate(context: Context, manager: AppWidgetManager, ids: IntArray) {
         super.onUpdate(context, manager, ids)
         if (ids.isEmpty()) return
 
-        // Keep BroadcastReceiver alive during an asynchronous Retrofit request.
         val pendingResult = goAsync()
         val appContext = context.applicationContext
         CoroutineScope(SupervisorJob() + Dispatchers.IO).launch {
             try {
-                // BroadcastReceivers have a limited lifetime, so avoid long network waits.
                 val quote = withTimeoutOrNull(8_000L) {
                     GoldRepository.latestOrCached(appContext)
                 } ?: GoldRepository.cached(appContext)
